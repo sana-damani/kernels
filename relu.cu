@@ -1,10 +1,9 @@
 #include <stdio.h>
  
 const int N = 16; 
-const int blocksize = 1; 
  
 __global__ 
-void relu(int* d_in) 
+void relu(int* d_in, int *d_out) 
 {
 	// map function: f(x) = x if x >= 0, 0 otherwise
 	int val = d_in[threadIdx.x];
@@ -14,11 +13,11 @@ void relu(int* d_in)
 int main()
 {
  
-	int *h_in;
+	int *h_in, *h_out, *d_in, *d_out;
 	const int size = N*sizeof(int);
  
-	malloc((void**)&h_in, size); 
-	malloc((void**)&h_out, size);  
+	h_in = (int*)malloc(size); 
+	h_out = (int*)malloc(size); 
 
 	for (int ii = 0; ii < N; ii++) {
 	    if (ii % 2)
@@ -30,9 +29,9 @@ int main()
 	cudaMalloc((void**)&d_out, size); 
 	cudaMemcpy(d_in, h_in, size, cudaMemcpyHostToDevice); 
 	
-	dim3 dimBlock(blocksize, N);
+	dim3 dimBlock(N, 1);
 	dim3 dimGrid(1, 1);
-	hello<<<dimGrid, dimBlock>>>(d_in);
+	relu<<<dimGrid, dimBlock>>>(d_in, d_out);
 	cudaMemcpy(h_out, d_out, size, cudaMemcpyDeviceToHost); 
 	for (int ii = 0; ii < N; ii++)
 	    printf("\nin[%d]=%d\tout[%d]=%d", ii, h_in[ii], ii, h_out[ii]);
